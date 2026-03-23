@@ -3,145 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Canto de Moscas - AR Experience</title>
+    <title>Canto de Moscas - AR Experience v2</title>
     
-    <!-- A-Frame & MindAR Libraries -->
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <!-- A-Frame 1.4.2 (Highly stable with MindAR) -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <!-- MindAR Image 1.2.5 -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
         :root {
-            --primary-bg: #121212;
-            --accent-color: #ffd700;
-            --text-color: #ffffff;
-            --glass-bg: rgba(255, 255, 255, 0.1);
+            --primary-bg: #0f0f0f;
+            --accent: #ffd700;
+            --error: #ff4444;
+            --text: #ffffff;
         }
 
         body {
             margin: 0;
             overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background-color: var(--primary-bg);
+            color: var(--text);
         }
 
-        /* Loading & Overlay Container */
+        /* Full Screen Overlay */
         #overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             z-index: 9999;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(circle, #1a1a1a 0%, #000000 100%);
-            transition: opacity 0.5s ease;
-        }
-
-        /* Startup Button */
-        #start-btn {
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: var(--primary-bg);
-            background-color: var(--accent-color);
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
-            display: none; /* Hidden until MindAR finishes loading internal assets */
-        }
-
-        #start-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* Status Text */
-        #status {
-            margin-top: 20px;
-            color: var(--text-color);
-            font-size: 1rem;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px;
             text-align: center;
-            max-width: 80%;
-            opacity: 0.8;
         }
 
-        /* Instruction text during AR */
-        #instruction-hint {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            padding: 10px 20px;
-            border-radius: 20px;
-            color: white;
-            z-index: 100;
-            pointer-events: none;
-            display: none;
-            border: 1px solid rgba(255,255,255,0.2);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-        }
-
-        /* AR UI elements suppression */
-        .a-enter-vr { display: none !important; }
-
-        /* Spinner for loading */
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255, 215, 0, 0.2);
-            border-top: 5px solid var(--accent-color);
+        /* Animated Spinner */
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 215, 0, 0.1);
+            border-left-color: var(--accent);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Start Button - Hidden until Ready */
+        #start-btn {
+            display: none;
+            padding: 16px 48px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #000;
+            background: var(--accent);
+            border: none;
+            border-radius: 100px;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.2s;
         }
+
+        #start-btn:active { transform: scale(0.96); }
+
+        /* Status & Log Messaging */
+        #status-msg {
+            font-size: 1rem;
+            opacity: 0.8;
+            max-width: 300px;
+            line-height: 1.5;
+            margin-top: 20px;
+        }
+
+        /* Error Banner */
+        .error-box {
+            background: rgba(255, 68, 68, 0.15);
+            border: 1px solid var(--error);
+            padding: 15px;
+            border-radius: 12px;
+            color: var(--error);
+            display: none;
+        }
+
+        /* Scanning Visual Hint */
+        #scan-hint {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+            display: none;
+            animation: pulse-op 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-op { from { opacity: 0.5; } to { opacity: 1; } }
+
+        .a-enter-vr { display: none !important; }
     </style>
 </head>
 <body>
 
-    <!-- Overlay UI -->
+    <!-- UI Layer -->
     <div id="overlay">
-        <div id="loading-spinner" class="spinner"></div>
-        <button id="start-btn">INICIAR AR</button>
-        <div id="status">Cargando el mapa de la mosca...</div>
+        <div id="ui-loader" class="loader"></div>
+        <div id="error-box" class="error-box"></div>
+        <button id="start-btn">ENTRAR AL CANTO 🪰</button>
+        <div id="status-msg">Iniciando motor de Realidad Aumentada...</div>
     </div>
 
-    <div id="instruction-hint">Escanea el dibujo de la mosca 🪰</div>
+    <div id="scan-hint">Busca la mosca en el libro...</div>
 
-    <!-- AR Scene -->
+    <!-- AR Scene (A-Frame 1.4.2) -->
     <a-scene 
         mindar-image="imageTargetSrc: ./targets_mosca_1.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;" 
         color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights" 
+        renderer="colorManagement: true; physicallyCorrectLights: true;" 
         vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
         <a-assets>
-            <audio id="mosca-sound" src="audio_mosca.mp3" preload="auto" loop="true"></audio>
+            <audio id="mosca-audio" src="audio_mosca.mp3" preload="auto" loop="true"></audio>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- Image Target -->
-        <a-entity mindar-image-target="targetIndex: 0" id="mosca-target">
-            <!-- Optional: A small aura or visual to confirm tracking -->
-            <a-ring color="#ffd700" radius-inner="0.8" radius-outer="1" opacity="0.3" rotation="-90 0 0" 
-                    animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 800; loop: true"></a-ring>
+        <!-- FLY TARGET -->
+        <a-entity mindar-image-target="targetIndex: 0" id="fly-target">
+            <!-- Visual feedback (Ring) -->
+            <a-ring color="#ffd700" radius-inner="0.6" radius-outer="0.8" rotation="-90 0 0" opacity="0.5" 
+                    animation="property: scale; to: 1.3 1.3 1.3; dir: alternate; dur: 1000; loop: true"></a-ring>
         </a-entity>
     </a-scene>
 
@@ -149,65 +151,71 @@
         const sceneEl = document.querySelector('a-scene');
         const startBtn = document.querySelector('#start-btn');
         const overlay = document.querySelector('#overlay');
-        const statusText = document.querySelector('#status');
-        const spinner = document.querySelector('#loading-spinner');
-        const instructionHint = document.querySelector('#instruction-hint');
-        const audio = document.querySelector('#mosca-sound');
+        const statusMsg = document.querySelector('#status-msg');
+        const loader = document.querySelector('#ui-loader');
+        const errorBox = document.querySelector('#error-box');
+        const scanHint = document.querySelector('#scan-hint');
+        const audio = document.querySelector('#mosca-audio');
 
-        // 1. Wait for MindAR to be ready
+        // Check for local file protocol issue
+        if (window.location.protocol === 'file:') {
+            loader.style.display = 'none';
+            statusMsg.style.display = 'none';
+            errorBox.style.display = 'block';
+            errorBox.innerHTML = "<strong>Error de Protocolo:</strong> No puedes abrir este archivo directamente. Debe subirse a GitHub Pages o usarse un servidor local (localhost).";
+        }
+
+        // Wait for AR Engine to compile targets
         sceneEl.addEventListener('ready', () => {
-            console.log("MindAR Ready");
-            spinner.style.display = 'none';
+            console.log("MindAR System Ready");
+            loader.style.display = 'none';
             startBtn.style.display = 'block';
-            statusText.innerText = "Listo. Haz clic para activar el sonido y la cámara.";
+            statusMsg.innerText = "Preparado. Toca el botón para activar cámara y sonido.";
         });
 
-        // 2. Handle Start click (Resume AudioContext & Start AR)
+        // Activation Flow
         startBtn.addEventListener('click', () => {
+            // Hide Overlay
             overlay.style.opacity = '0';
             setTimeout(() => {
                 overlay.style.display = 'none';
-                instructionHint.style.display = 'block';
-            }, 500);
+                scanHint.style.display = 'block';
+            }, 600);
 
-            // Start AR engine
-            const { systems } = sceneEl;
-            systems['mindar-image-system'].start();
+            // Start Camera & Engine
+            const system = sceneEl.systems['mindar-image-system'];
+            system.start();
 
-            // Resume audio context for browsers
-            const audioCtx = AFRAME.ANALYTICS ? AFRAME.ANALYTICS.audioContext : null;
-            if (audioCtx) {
-                audioCtx.resume();
-            }
-            
-            // Interaction to unlock audio
-            audio.play();
-            audio.pause();
-            audio.currentTime = 0;
+            // Handle Audio Unlock
+            audio.play().then(() => {
+                audio.pause(); // Just unlocking, play on targetFound
+                audio.currentTime = 0;
+            }).catch(e => console.warn("Audio waiting for interaction:", e));
         });
 
-        // 3. Tracking Events
-        const targetEl = document.querySelector('#mosca-target');
+        // Detection Logic
+        const flyTarget = document.querySelector('#fly-target');
 
-        targetEl.addEventListener("targetFound", event => {
-            console.log("Target Found! 🪰");
-            instructionHint.style.display = 'none';
-            audio.play().catch(e => console.error("Audio error:", e));
+        flyTarget.addEventListener("targetFound", () => {
+            console.log("🪰 Mosca Detectada!");
+            scanHint.style.display = 'none';
+            audio.play().catch(e => console.error(e));
         });
 
-        targetEl.addEventListener("targetLost", event => {
-            console.log("Target Lost");
-            instructionHint.style.display = 'block';
+        flyTarget.addEventListener("targetLost", () => {
+            console.log("Mosca Perdida...");
+            scanHint.style.display = 'block';
             audio.pause();
         });
 
-        // Error Handling
+        // Error Feedback
         sceneEl.addEventListener("arError", (event) => {
-            console.error("AR Error:", event.detail.error);
-            statusText.innerText = "Error de cámara: " + event.detail.error;
-            statusText.style.color = "#ff4444";
-            spinner.style.display = 'none';
+            statusMsg.style.color = "#ff4444";
+            statusMsg.innerText = "Error de cámara: " + event.detail.error;
         });
+
+        // Log for checking
+        console.log("Versión Robusta v2 Cargada");
     </script>
 </body>
 </html>
