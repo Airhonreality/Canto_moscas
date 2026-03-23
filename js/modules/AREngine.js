@@ -1,5 +1,5 @@
 /**
- * AR ENGINE: El Ojo (MODULAR & REUTILIZABLE)
+ * AR ENGINE: El Ojo (VERSIÓN DETERMINISTA)
  */
 export class AREngine {
     constructor(sceneId, targetId, logger) {
@@ -7,7 +7,6 @@ export class AREngine {
         this.targetEl = document.getElementById(targetId);
         this.logger = logger;
         
-        this.onHydratedCallback = null;
         this.onActiveCallback = null;
         this.onFoundCallback = null;
         this.onLostCallback = null;
@@ -15,21 +14,13 @@ export class AREngine {
         this.initialized = false;
         this.isActive = false;
 
-        if (!this.sceneEl) return;
-
-        this.sceneEl.addEventListener('loaded', () => {
-            this._checkHydration();
-        });
+        this.logger.info("Motor AR en espera del usuario...");
 
         this.sceneEl.addEventListener('ready', () => {
-            this.logger.info("MindAR READY.");
+            this.logger.info("Cámara y Tracking ACTIVOS!");
             this.isActive = true;
             if (this.onActiveCallback) this.onActiveCallback();
         });
-
-        this.pollTimer = setInterval(() => {
-            this._checkHydration();
-        }, 800);
 
         this.targetEl.addEventListener("targetFound", () => {
             if (this.onFoundCallback) this.onFoundCallback();
@@ -40,33 +31,25 @@ export class AREngine {
         });
 
         this.sceneEl.addEventListener("arError", (e) => {
-            this.logger.error(`AR Error: ${e.detail.error}`);
+            this.logger.error(`Error de Cámara: ${e.detail.error}`);
         });
     }
 
-    _checkHydration() {
-        if (this.initialized) return;
+    start() {
+        this.logger.info("Inyectando Cámara al Sistema...");
         const system = this.sceneEl.systems['mindar-image-system'];
         if (system) {
-            this.initialized = true;
-            clearInterval(this.pollTimer);
-            this.logger.info("AR Engine Hidratado.");
-            if (this.onHydratedCallback) this.onHydratedCallback();
+            system.start();
+        } else {
+            this.logger.error("Error: Sistema MindAR no hidratado en A-Frame.");
         }
     }
 
-    start() {
-        this.logger.info("Abriendo Cámara...");
-        const system = this.sceneEl.systems['mindar-image-system'];
-        if (system) system.start();
-    }
-
     stop() {
-        this.logger.warn("Cerrando Cámara y Liberando Recursos...");
+        this.logger.warn("Liberando Cámara...");
         const system = this.sceneEl.systems['mindar-image-system'];
         if (system) {
             system.stop();
-            // Limpiar manualmente el video feed si MindAR lo deja en el body
             const video = document.querySelector('video');
             if (video) video.remove();
         }

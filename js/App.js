@@ -1,5 +1,6 @@
 /**
- * APP: El Orquestador (SPA + AR + AUDITORÍA)
+ * APP: El Orquestador (VERSIÓN DETERMINISTA FINAL)
+ * Prioridad: El Usuario es el Motor de arranque.
  */
 import { Logger } from './modules/Logger.js';
 import { AudioEngine } from './modules/AudioEngine.js';
@@ -19,21 +20,21 @@ class CantoMoscasApp {
     async init() {
         this.logger.info("Fase 1: Auditoría de Assets Integrada.");
         
+        // Audit de Assets Directo (Sin esperar al motor)
         try {
             const res = await fetch('./targets_mosca_1.mind', { method: 'HEAD' });
-            if (res.ok) this.logger.info("Asset Check: El archivo .mind está presente.");
-            else this.logger.error(`Asset Check: El archivo fallo con HTTP Status: ${res.status}`);
+            if (res.ok) {
+                this.logger.info("Asset Check OK. Preparando Interfaz...");
+                this.ui.readyToStart(); // ¡BOTÓN ARRIBA DE INMEDIATO!
+            } else {
+                this.logger.error("Error: Archivo .mind no accesible (404).");
+            }
         } catch (e) {
-            this.logger.warn("Asset Check: No se pudo verificar asset por red (CORS o Offline).");
+            this.logger.warn("Asset Check omitido por red restrictiva (CORS/Offline).");
+            this.ui.readyToStart(); // Intentamos de todas formas
         }
 
-        // 2. Orquestar la Hidratación
-        this.ar.onHydratedCallback = () => {
-            this.logger.info("AR Hidratado. Preparando Interfaz...");
-            this.ui.readyToStart();
-        };
-
-        // 3. Orquestar la Detección
+        // Configurar Eventos de Rastreo (Para cuando inicie)
         this.ar.onFoundCallback = () => {
             this.audio.play();
             document.getElementById('scan-hint').style.display = 'none';
@@ -44,36 +45,29 @@ class CantoMoscasApp {
             document.getElementById('scan-hint').style.display = 'block';
         };
 
-        // 4. Configurar Eventos de Navegación
+        // Configurar Eventos de Navegación
         this._setupEvents();
     }
 
     _setupEvents() {
-        // Iniciar AR
         document.getElementById('start-btn').onclick = () => this.startAR();
-
-        // Volver del AR
         document.getElementById('back-to-menu').onclick = () => this.stopAR();
-
-        // Ir a Autores
         document.getElementById('go-authors-btn').onclick = () => this.ui.showView('view-authors');
-
-        // Volver al Libro desde Autores
         document.getElementById('back-to-book-btn').onclick = () => this.ui.showView('view-book');
     }
 
     async startAR() {
-        this.logger.info("Transición a AR Iniciada.");
+        this.logger.info("Secuencia de Inicio de Cámara...");
         await this.audio.unlock();
-        this.ar.start(); // Iniciar Cámara
         this.ui.setARMode(true); // Ocultar UI Menu
+        this.ar.start(); // El motor MindAR arranca AQUÍ, cuando el usuario ya pulsó.
     }
 
     stopAR() {
         this.logger.info("Regresando al Menú...");
         this.audio.pause();
-        this.ar.stop(); // Apagar Cámara y Liberar Recursos
-        this.ui.setARMode(false); // Mostrar UI Menu
+        this.ar.stop();
+        this.ui.setARMode(false);
     }
 }
 
