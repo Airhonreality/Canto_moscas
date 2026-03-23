@@ -3,134 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Canto de Moscas - AR Experience v2</title>
+    <title>Canto de Moscas - Deterministic AR v3</title>
     
-    <!-- A-Frame 1.4.2 (Highly stable with MindAR) -->
+    <!-- Librerías Nucleares -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <!-- MindAR Image 1.2.5 -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
+    <script>
+        /**
+         * ARQUITECTURA DETERMINISTA AXIOMÁTICA
+         * Controlamos el ciclo de vida desde el corazón de A-Frame.
+         */
+        AFRAME.registerComponent('mosca-master', {
+            init: function () {
+                this.sceneEl = this.el;
+                this.overlay = document.querySelector('#overlay');
+                this.startBtn = document.querySelector('#start-btn');
+                this.loader = document.querySelector('#ui-loader');
+                this.statusMsg = document.querySelector('#status-msg');
+                this.audio = document.querySelector('#mosca-audio');
+                this.scanHint = document.querySelector('#scan-hint');
+
+                console.log("[AR-MASTER] Componente Inicializado.");
+
+                // Escuchamos el evento nativo de MindAR 'ready'
+                this.sceneEl.addEventListener('ready', () => {
+                   this.onSystemReady();
+                });
+
+                // Fail-safe por si el evento se disparó antes de la hidratación total
+                this.checkReadyInterval = setInterval(() => {
+                    const system = this.sceneEl.systems['mindar-image-system'];
+                    if (system && system.initialized) {
+                        this.onSystemReady();
+                    }
+                }, 500);
+
+                // Manejo de Error de cámara
+                this.sceneEl.addEventListener('arError', (e) => {
+                    this.statusMsg.innerText = "Error AR: " + e.detail.error;
+                    this.statusMsg.style.color = "red";
+                });
+            },
+
+            onSystemReady: function () {
+                if (this.isReady) return;
+                this.isReady = true;
+                clearInterval(this.checkReadyInterval);
+                
+                console.log("[AR-MASTER] Sistema MindAR listo.");
+                this.loader.style.display = 'none';
+                this.startBtn.style.display = 'block';
+                this.statusMsg.innerText = "Canto de moscas preparado. Toca para entrar.";
+            },
+
+            startAR: function () {
+                // 1. Desvanecer Overlay
+                this.overlay.style.opacity = '0';
+                setTimeout(() => {
+                    this.overlay.style.display = 'none';
+                    this.scanHint.style.display = 'block';
+                }, 600);
+
+                // 2. Arrancar Motor MindAR (Aseguramos acceso a cámara tras interacción)
+                const system = this.sceneEl.systems['mindar-image-system'];
+                system.start();
+
+                // 3. Desbloquear Audio Context
+                this.audio.play().then(() => {
+                    this.audio.pause(); 
+                    this.audio.currentTime = 0;
+                }).catch(e => console.warn(e));
+            }
+        });
+
+        // Bridge para el botón (ya que el componente está en el scene)
+        function handleStart() {
+            const scene = document.querySelector('a-scene');
+            scene.components['mosca-master'].startAR();
+        }
+    </script>
+
     <style>
-        :root {
-            --primary-bg: #0f0f0f;
-            --accent: #ffd700;
-            --error: #ff4444;
-            --text: #ffffff;
-        }
-
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--primary-bg);
-            color: var(--text);
-        }
-
-        /* Full Screen Overlay */
+        :root { --accent: #ffd700; --bg: #0a0a0a; }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; background: var(--bg); color: white; }
+        
         #overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
-            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 20px;
-            text-align: center;
+            position: fixed; inset: 0; z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #222 0%, #000 100%);
+            transition: opacity 0.6s ease;
         }
 
-        /* Animated Spinner */
-        .loader {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(255, 215, 0, 0.1);
-            border-left-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 24px;
+        .spinner {
+            width: 50px; height: 50px; border: 4px solid rgba(255,215,0,0.1);
+            border-top: 4px solid var(--accent); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
         }
-
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* Start Button - Hidden until Ready */
         #start-btn {
-            display: none;
-            padding: 16px 48px;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #000;
-            background: var(--accent);
-            border: none;
-            border-radius: 100px;
-            cursor: pointer;
-            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: transform 0.2s;
+            display: none; padding: 18px 40px; font-size: 1.3rem; font-weight: bold;
+            background: var(--accent); border: none; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255,215,0,0.3);
         }
 
-        #start-btn:active { transform: scale(0.96); }
+        #status-msg { margin-top: 20px; opacity: 0.7; font-size: 0.9rem; text-align: center; }
 
-        /* Status & Log Messaging */
-        #status-msg {
-            font-size: 1rem;
-            opacity: 0.8;
-            max-width: 300px;
-            line-height: 1.5;
-            margin-top: 20px;
-        }
-
-        /* Error Banner */
-        .error-box {
-            background: rgba(255, 68, 68, 0.15);
-            border: 1px solid var(--error);
-            padding: 15px;
-            border-radius: 12px;
-            color: var(--error);
-            display: none;
-        }
-
-        /* Scanning Visual Hint */
         #scan-hint {
-            position: fixed;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px);
-            padding: 12px 24px;
-            border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
-            z-index: 100;
-            display: none;
-            animation: pulse-op 1.5s infinite alternate;
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 20px;
+            z-index: 100; display: none; border: 1px solid rgba(255,255,255,0.2);
+            animation: pulse 2s infinite;
         }
-
-        @keyframes pulse-op { from { opacity: 0.5; } to { opacity: 1; } }
-
-        .a-enter-vr { display: none !important; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
-    <!-- UI Layer -->
     <div id="overlay">
-        <div id="ui-loader" class="loader"></div>
-        <div id="error-box" class="error-box"></div>
-        <button id="start-btn">ENTRAR AL CANTO 🪰</button>
-        <div id="status-msg">Iniciando motor de Realidad Aumentada...</div>
+        <div id="ui-loader" class="spinner"></div>
+        <button id="start-btn" onclick="handleStart()">ACTIVAR EXPERIENCIA 🪰</button>
+        <div id="status-msg">Cargando el canto de la mosca...</div>
     </div>
 
-    <div id="scan-hint">Busca la mosca en el libro...</div>
+    <div id="scan-hint">Apunta la cámara a la mosca...</div>
 
-    <!-- AR Scene (A-Frame 1.4.2) -->
+    <!-- Escena con Componente mosca-master adjunto -->
     <a-scene 
+        mosca-master
         mindar-image="imageTargetSrc: ./targets_mosca_1.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;" 
         color-space="sRGB" 
-        renderer="colorManagement: true; physicallyCorrectLights: true;" 
-        vr-mode-ui="enabled: false" 
+        renderer="colorManagement: true; physicallyCorrectLights: true" 
+        vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: false">
         
         <a-assets>
@@ -139,83 +144,27 @@
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <!-- FLY TARGET -->
-        <a-entity mindar-image-target="targetIndex: 0" id="fly-target">
-            <!-- Visual feedback (Ring) -->
-            <a-ring color="#ffd700" radius-inner="0.6" radius-outer="0.8" rotation="-90 0 0" opacity="0.5" 
-                    animation="property: scale; to: 1.3 1.3 1.3; dir: alternate; dur: 1000; loop: true"></a-ring>
+        <a-entity mindar-image-target="targetIndex: 0" id="target">
+            <a-ring color="#ffd700" radius-inner="0.7" radius-outer="0.9" rotation="-90 0 0"
+                    animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; loop: true"></a-ring>
         </a-entity>
     </a-scene>
 
     <script>
-        const sceneEl = document.querySelector('a-scene');
-        const startBtn = document.querySelector('#start-btn');
-        const overlay = document.querySelector('#overlay');
-        const statusMsg = document.querySelector('#status-msg');
-        const loader = document.querySelector('#ui-loader');
-        const errorBox = document.querySelector('#error-box');
-        const scanHint = document.querySelector('#scan-hint');
+        // Lógica de detección (independiente del arranque)
+        const target = document.querySelector('#target');
         const audio = document.querySelector('#mosca-audio');
 
-        // Check for local file protocol issue
-        if (window.location.protocol === 'file:') {
-            loader.style.display = 'none';
-            statusMsg.style.display = 'none';
-            errorBox.style.display = 'block';
-            errorBox.innerHTML = "<strong>Error de Protocolo:</strong> No puedes abrir este archivo directamente. Debe subirse a GitHub Pages o usarse un servidor local (localhost).";
-        }
-
-        // Wait for AR Engine to compile targets
-        sceneEl.addEventListener('ready', () => {
-            console.log("MindAR System Ready");
-            loader.style.display = 'none';
-            startBtn.style.display = 'block';
-            statusMsg.innerText = "Preparado. Toca el botón para activar cámara y sonido.";
+        target.addEventListener("targetFound", () => {
+            console.log("Detectada!");
+            audio.play();
+            document.querySelector('#scan-hint').style.display = 'none';
         });
 
-        // Activation Flow
-        startBtn.addEventListener('click', () => {
-            // Hide Overlay
-            overlay.style.opacity = '0';
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                scanHint.style.display = 'block';
-            }, 600);
-
-            // Start Camera & Engine
-            const system = sceneEl.systems['mindar-image-system'];
-            system.start();
-
-            // Handle Audio Unlock
-            audio.play().then(() => {
-                audio.pause(); // Just unlocking, play on targetFound
-                audio.currentTime = 0;
-            }).catch(e => console.warn("Audio waiting for interaction:", e));
-        });
-
-        // Detection Logic
-        const flyTarget = document.querySelector('#fly-target');
-
-        flyTarget.addEventListener("targetFound", () => {
-            console.log("🪰 Mosca Detectada!");
-            scanHint.style.display = 'none';
-            audio.play().catch(e => console.error(e));
-        });
-
-        flyTarget.addEventListener("targetLost", () => {
-            console.log("Mosca Perdida...");
-            scanHint.style.display = 'block';
+        target.addEventListener("targetLost", () => {
             audio.pause();
+            document.querySelector('#scan-hint').style.display = 'block';
         });
-
-        // Error Feedback
-        sceneEl.addEventListener("arError", (event) => {
-            statusMsg.style.color = "#ff4444";
-            statusMsg.innerText = "Error de cámara: " + event.detail.error;
-        });
-
-        // Log for checking
-        console.log("Versión Robusta v2 Cargada");
     </script>
 </body>
 </html>
