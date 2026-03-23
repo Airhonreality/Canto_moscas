@@ -3,25 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Canto de Moscas - Sistema Modular</title>
+    <title>Escuchar el Canto de las Moscas - Experiencia AR</title>
     
     <!-- Librerías de Visualización AR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <!-- Modulos de Orquestación JS -->
-    <script type="module" src="./js/App.js"></script>
+    <script type="module" src="./js/App.js?v=292"></script>
 
     <style>
-        :root { --accent: #ffd700; --bg: #000000; }
-        body { margin: 0; overflow: hidden; background: var(--bg); color: #fff; font-family: sans-serif; }
+        :root { 
+            --accent: #ffd700; 
+            --bg: #000000; 
+            --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        
+        body { margin: 0; overflow: hidden; background: var(--bg); color: #fff; font-family: var(--font-main); }
 
         /* Overlay principal */
         #overlay {
             position: fixed; inset: 0; z-index: 10000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             background: radial-gradient(circle, #1a1a1a 0%, #000000 100%);
-            transition: opacity 0.6s ease;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Título del Libro */
+        #book-title {
+            font-size: 1.8rem;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            filter: drop-shadow(0 0 10px rgba(255,215,0,0.2));
+            display: none; /* Se muestra junto al botón */
         }
 
         /* Spinner Animado */
@@ -32,28 +51,46 @@
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* Botón de Entrada */
+        /* Botón Iniciar Experiencia */
         #start-btn {
-            display: none; padding: 16px 40px; font-size: 1.1rem; font-weight: bold;
-            background: var(--accent); border: none; border-radius: 50px; cursor: pointer;
-            box-shadow: 0 10px 40px rgba(255,215,0,0.4); text-transform: uppercase;
+            display: none; 
+            padding: 18px 36px; 
+            font-size: 1rem; 
+            font-weight: 600;
+            background: transparent; 
+            color: var(--accent);
+            border: 1px solid var(--accent); 
+            border-radius: 4px; 
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
         }
 
-        /* Consola de Diagnóstico (Debugger Visual) */
+        #start-btn:hover {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 30px rgba(255,215,0,0.2);
+        }
+
+        /* Consola de Diagnóstico */
         #debug-logs {
             position: fixed; bottom: 20px; right: 20px;
-            width: 250px; max-height: 150px;
-            background: rgba(0,0,0,0.7);
-            padding: 10px; border-radius: 8px; font-family: monospace;
-            font-size: 10px; overflow: hidden; z-index: 10001;
-            pointer-events: none; border: 1px solid rgba(255,255,255,0.1);
+            width: 250px; max-height: 120px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px; border-radius: 4px; font-family: monospace;
+            font-size: 9px; overflow: hidden; z-index: 10001;
+            pointer-events: none; border: 1px solid rgba(255,255,255,0.05);
+            opacity: 0.5;
         }
 
         #scan-hint {
             position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.6); padding: 12px 24px; border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.2); z-index: 100;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+            padding: 12px 24px; border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1); z-index: 100;
             display: none; pointer-events: none;
+            letter-spacing: 1px; font-size: 0.9rem;
         }
 
         .a-enter-vr { display: none !important; }
@@ -63,9 +100,10 @@
 
     <!-- Capa del Sistema -->
     <div id="overlay">
+        <h1 id="book-title">Escuchar el canto de las moscas</h1>
         <div id="ui-loader" class="loader"></div>
-        <button id="start-btn">INICIAR CANTO DE MOSCA 🪰</button>
-        <div id="debug-logs"></div> <!-- Consola Axiomática -->
+        <button id="start-btn">Iniciar experiencia de lectura aumentada</button>
+        <div id="debug-logs"></div>
     </div>
 
     <!-- Referencia Visual en AR -->
