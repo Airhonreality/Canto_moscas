@@ -1,44 +1,21 @@
 /**
- * LOGGER: El Notario del Sistema
- * Captura todos los eventos críticos para auditoría visual.
+ * LOGGER: El Notario Silent (PROD)
+ * Auditoría interna vía consola.
  */
 export class Logger {
-    constructor(elementId) {
-        this.logElement = document.getElementById(elementId);
-        this.maxLogs = 8;
-        this.logs = [];
-        this.info("Logger Inicializado. Auditoría activa.");
+    constructor() {
+        this.info("Sistema de Auditoría de Producción Activo.");
     }
 
     info(msg) {
-        console.log(`[INFO] ${msg}`);
-        this._addLog(`[OK] ${msg}`, '#ffd700');
+        console.log(`%c[INFO] %c${msg}`, 'color: #ffd700; font-weight: bold', 'color: white');
     }
 
     warn(msg) {
-        console.warn(`[WARN] ${msg}`);
-        this._addLog(`[!] ${msg}`, '#ffaa00');
+        console.warn(`%c[WARN] %c${msg}`, 'color: #ffaa00; font-weight: bold', 'color: white');
     }
 
     error(msg) {
-        console.error(`[ERROR] ${msg}`);
-        this._addLog(`[CRASH] ${msg}`, '#ff4444');
-    }
-
-    _addLog(msg, color) {
-        if (!this.logElement) return;
-        const entry = document.createElement('div');
-        entry.style.color = color;
-        entry.style.marginBottom = '4px';
-        entry.style.fontSize = '12px';
-        entry.textContent = `${new Date().toLocaleTimeString()} - ${msg}`;
-        
-        this.logElement.prepend(entry);
-        this.logs.push(entry);
-
-        if (this.logs.length > this.maxLogs) {
-            const old = this.logs.shift();
-            old.remove();
-        }
+        console.error(`%c[ERROR] %c${msg}`, 'color: #ff4444; font-weight: bold', 'color: white');
     }
 }
