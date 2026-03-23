@@ -3,136 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Canto de Moscas - Deterministic AR v3</title>
+    <title>Canto de Moscas - Sistema Modular</title>
     
-    <!-- Librerías Nucleares -->
+    <!-- Librerías de Visualización AR -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
-    <script>
-        /**
-         * ARQUITECTURA DETERMINISTA AXIOMÁTICA
-         * Controlamos el ciclo de vida desde el corazón de A-Frame.
-         */
-        AFRAME.registerComponent('mosca-master', {
-            init: function () {
-                this.sceneEl = this.el;
-                this.overlay = document.querySelector('#overlay');
-                this.startBtn = document.querySelector('#start-btn');
-                this.loader = document.querySelector('#ui-loader');
-                this.statusMsg = document.querySelector('#status-msg');
-                this.audio = document.querySelector('#mosca-audio');
-                this.scanHint = document.querySelector('#scan-hint');
-
-                console.log("[AR-MASTER] Componente Inicializado.");
-
-                // Escuchamos el evento nativo de MindAR 'ready'
-                this.sceneEl.addEventListener('ready', () => {
-                   this.onSystemReady();
-                });
-
-                // Fail-safe por si el evento se disparó antes de la hidratación total
-                this.checkReadyInterval = setInterval(() => {
-                    const system = this.sceneEl.systems['mindar-image-system'];
-                    if (system && system.initialized) {
-                        this.onSystemReady();
-                    }
-                }, 500);
-
-                // Manejo de Error de cámara
-                this.sceneEl.addEventListener('arError', (e) => {
-                    this.statusMsg.innerText = "Error AR: " + e.detail.error;
-                    this.statusMsg.style.color = "red";
-                });
-            },
-
-            onSystemReady: function () {
-                if (this.isReady) return;
-                this.isReady = true;
-                clearInterval(this.checkReadyInterval);
-                
-                console.log("[AR-MASTER] Sistema MindAR listo.");
-                this.loader.style.display = 'none';
-                this.startBtn.style.display = 'block';
-                this.statusMsg.innerText = "Canto de moscas preparado. Toca para entrar.";
-            },
-
-            startAR: function () {
-                // 1. Desvanecer Overlay
-                this.overlay.style.opacity = '0';
-                setTimeout(() => {
-                    this.overlay.style.display = 'none';
-                    this.scanHint.style.display = 'block';
-                }, 600);
-
-                // 2. Arrancar Motor MindAR (Aseguramos acceso a cámara tras interacción)
-                const system = this.sceneEl.systems['mindar-image-system'];
-                system.start();
-
-                // 3. Desbloquear Audio Context
-                this.audio.play().then(() => {
-                    this.audio.pause(); 
-                    this.audio.currentTime = 0;
-                }).catch(e => console.warn(e));
-            }
-        });
-
-        // Bridge para el botón (ya que el componente está en el scene)
-        function handleStart() {
-            const scene = document.querySelector('a-scene');
-            scene.components['mosca-master'].startAR();
-        }
-    </script>
+    <!-- Modulos de Orquestación JS -->
+    <script type="module" src="./js/App.js"></script>
 
     <style>
-        :root { --accent: #ffd700; --bg: #0a0a0a; }
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background: var(--bg); color: white; }
-        
+        :root { --accent: #ffd700; --bg: #000000; }
+        body { margin: 0; overflow: hidden; background: var(--bg); color: #fff; font-family: sans-serif; }
+
+        /* Overlay principal */
         #overlay {
             position: fixed; inset: 0; z-index: 10000;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: radial-gradient(circle, #222 0%, #000 100%);
+            background: radial-gradient(circle, #1a1a1a 0%, #000000 100%);
             transition: opacity 0.6s ease;
         }
 
-        .spinner {
-            width: 50px; height: 50px; border: 4px solid rgba(255,215,0,0.1);
-            border-top: 4px solid var(--accent); border-radius: 50%;
+        /* Spinner Animado */
+        .loader {
+            width: 40px; height: 40px; border: 3px solid rgba(255,215,0,0.1);
+            border-top: 3px solid var(--accent); border-radius: 50%;
             animation: spin 1s linear infinite; margin-bottom: 20px;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
+        /* Botón de Entrada */
         #start-btn {
-            display: none; padding: 18px 40px; font-size: 1.3rem; font-weight: bold;
+            display: none; padding: 16px 40px; font-size: 1.1rem; font-weight: bold;
             background: var(--accent); border: none; border-radius: 50px; cursor: pointer;
-            box-shadow: 0 10px 30px rgba(255,215,0,0.3);
+            box-shadow: 0 10px 40px rgba(255,215,0,0.4); text-transform: uppercase;
         }
 
-        #status-msg { margin-top: 20px; opacity: 0.7; font-size: 0.9rem; text-align: center; }
+        /* Consola de Diagnóstico (Debugger Visual) */
+        #debug-logs {
+            position: fixed; bottom: 20px; right: 20px;
+            width: 250px; max-height: 150px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px; border-radius: 8px; font-family: monospace;
+            font-size: 10px; overflow: hidden; z-index: 10001;
+            pointer-events: none; border: 1px solid rgba(255,255,255,0.1);
+        }
 
         #scan-hint {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.6); padding: 10px 20px; border-radius: 20px;
-            z-index: 100; display: none; border: 1px solid rgba(255,255,255,0.2);
-            animation: pulse 2s infinite;
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.6); padding: 12px 24px; border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.2); z-index: 100;
+            display: none; pointer-events: none;
         }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        .a-enter-vr { display: none !important; }
     </style>
 </head>
 <body>
 
+    <!-- Capa del Sistema -->
     <div id="overlay">
-        <div id="ui-loader" class="spinner"></div>
-        <button id="start-btn" onclick="handleStart()">ACTIVAR EXPERIENCIA 🪰</button>
-        <div id="status-msg">Cargando el canto de la mosca...</div>
+        <div id="ui-loader" class="loader"></div>
+        <button id="start-btn">INICIAR CANTO DE MOSCA 🪰</button>
+        <div id="debug-logs"></div> <!-- Consola Axiomática -->
     </div>
 
-    <div id="scan-hint">Apunta la cámara a la mosca...</div>
+    <!-- Referencia Visual en AR -->
+    <div id="scan-hint">Busca la mosca en el dibujo...</div>
 
-    <!-- Escena con Componente mosca-master adjunto -->
+    <!-- Escena AR Configurada Determinísticamente -->
     <a-scene 
-        mosca-master
-        mindar-image="imageTargetSrc: ./targets_mosca_1.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no;" 
+        id="scene-ar"
+        mindar-image="imageTargetSrc: ./targets_mosca_1.mind; autoStart: false; uiLoading: no; uiError: no;" 
         color-space="sRGB" 
         renderer="colorManagement: true; physicallyCorrectLights: true" 
         vr-mode-ui="enabled: false"
@@ -144,27 +86,12 @@
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity mindar-image-target="targetIndex: 0" id="target">
-            <a-ring color="#ffd700" radius-inner="0.7" radius-outer="0.9" rotation="-90 0 0"
-                    animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; loop: true"></a-ring>
+        <!-- El Objetivo -->
+        <a-entity mindar-image-target="targetIndex: 0" id="target-mosca">
+            <a-ring color="#ffd700" radius-inner="0.6" radius-outer="0.8" rotation="-90 0 0"
+                    animation="property: scale; to: 1.25 1.25 1.25; dir: alternate; dur: 800; loop: true"></a-ring>
         </a-entity>
     </a-scene>
 
-    <script>
-        // Lógica de detección (independiente del arranque)
-        const target = document.querySelector('#target');
-        const audio = document.querySelector('#mosca-audio');
-
-        target.addEventListener("targetFound", () => {
-            console.log("Detectada!");
-            audio.play();
-            document.querySelector('#scan-hint').style.display = 'none';
-        });
-
-        target.addEventListener("targetLost", () => {
-            audio.pause();
-            document.querySelector('#scan-hint').style.display = 'block';
-        });
-    </script>
 </body>
 </html>
