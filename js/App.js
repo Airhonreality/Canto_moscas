@@ -1,6 +1,6 @@
 /**
- * APP: El Orquestador (VERSIÓN LABORATORIO)
- * Diagnóstico de Assets y Ciclo de Vida.
+ * APP: El Orquestador (VERSIÓN DESPERTAR MANUAL)
+ * Punto de entrada del experimento modular.
  */
 import { Logger } from './modules/Logger.js';
 import { AudioEngine } from './modules/AudioEngine.js';
@@ -18,7 +18,7 @@ class CantoMoscasApp {
     }
 
     async init() {
-        this.logger.info("Fase 1: Auditoría de Assets (URL: targets_mosca_1.mind)");
+        this.logger.info("Fase 1: Auditoría de Assets (targets_mosca_1.mind)");
         
         try {
             const res = await fetch('./targets_mosca_1.mind', { method: 'HEAD' });
@@ -31,13 +31,18 @@ class CantoMoscasApp {
             this.logger.error("Asset Check: Error de conexión o CORS.");
         }
 
-        // 2. Orquestar el Ready
-        this.ar.onReadyCallback = () => {
-            this.logger.info("Orquestador: Sistema Listo.");
+        // 2. Orquestar la Hidratación (Botón arriba)
+        this.ar.onHydratedCallback = () => {
+            this.logger.info("Orquestador: Sistema Hidratado. Mostrando botón.");
             this.ui.readyToStart();
         };
 
-        // 3. Orquestar el Rastreo
+        // 3. Orquestar la Activación Actual (Ready)
+        this.ar.onActiveCallback = () => {
+            this.logger.info("Orquestador: Cámara y Tracking Activos.");
+        };
+
+        // 4. Orquestar el Rastreo
         this.ar.onFoundCallback = () => {
             this.audio.play();
             document.getElementById('scan-hint').style.display = 'none';
@@ -48,19 +53,19 @@ class CantoMoscasApp {
             document.getElementById('scan-hint').style.display = 'block';
         };
 
-        // 4. Configurar Botón
+        // 5. Configurar Botón
         document.getElementById('start-btn').onclick = () => this.start();
     }
 
     async start() {
-        this.logger.info("Fase 2: Arranque de Motor.");
+        this.logger.info("Fase 2: Secuencia de Inicio de Usuario.");
         await this.audio.unlock();
-        this.ar.start();
+        this.ar.start(); // Despierta el motor MindAR
         this.ui.closeOverlay();
     }
 }
 
-// Inyectar app en el window para acceso global
+// Iniciar aplicación
 window.addEventListener('DOMContentLoaded', () => {
     window.App = new CantoMoscasApp();
 });
