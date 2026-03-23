@@ -1,6 +1,6 @@
 /**
- * APP: El Orquestador
- * Punto de entrada del experimento modular.
+ * APP: El Orquestador (VERSIÓN LABORATORIO)
+ * Diagnóstico de Assets y Ciclo de Vida.
  */
 import { Logger } from './modules/Logger.js';
 import { AudioEngine } from './modules/AudioEngine.js';
@@ -9,7 +9,6 @@ import { UIManager } from './modules/UIManager.js';
 
 class CantoMoscasApp {
     constructor() {
-        // Inicializar Servicios
         this.logger = new Logger('debug-logs');
         this.ui = new UIManager('overlay', 'start-btn', 'ui-loader', this.logger);
         this.audio = new AudioEngine('mosca-audio', this.logger);
@@ -19,22 +18,22 @@ class CantoMoscasApp {
     }
 
     async init() {
-        this.logger.info("Iniciando Verificación de Assets...");
+        this.logger.info("Fase 1: Auditoría de Assets (URL: targets_mosca_1.mind)");
         
-        // 1. Verificar existencia del archivo .mind (Asset Audit)
         try {
-            const response = await fetch('./targets_mosca_1.mind', { method: 'HEAD' });
-            if (response.ok) {
-                this.logger.info("Asset Audit: targets_mosca_1.mind localizado satisfactoriamente.");
+            const res = await fetch('./targets_mosca_1.mind', { method: 'HEAD' });
+            if (res.ok) {
+                this.logger.info("Asset Check: El archivo .mind está presente.");
             } else {
-                this.logger.error("Asset Audit: targets_mosca_1.mind no encontrado (404). El sistema AR fallará.");
+                this.logger.error(`Asset Check: El archivo fallo con HTTP Status: ${res.status}`);
             }
         } catch (e) {
-            this.logger.error("Asset Audit: Error al localizar targets (CORS o Red).");
+            this.logger.error("Asset Check: Error de conexión o CORS.");
         }
 
         // 2. Orquestar el Ready
         this.ar.onReadyCallback = () => {
+            this.logger.info("Orquestador: Sistema Listo.");
             this.ui.readyToStart();
         };
 
@@ -49,25 +48,19 @@ class CantoMoscasApp {
             document.getElementById('scan-hint').style.display = 'block';
         };
 
-        // 4. Configurar Botón de Arranque
+        // 4. Configurar Botón
         document.getElementById('start-btn').onclick = () => this.start();
     }
 
     async start() {
-        this.logger.info("Secuencia de Inicio de Usuario disparada.");
-        
-        // Desbloquear Audio Context (Imprescindible por seguridad del navegador)
+        this.logger.info("Fase 2: Arranque de Motor.");
         await this.audio.unlock();
-        
-        // Iniciar Cámara
         this.ar.start();
-        
-        // Limpiar Overlay
         this.ui.closeOverlay();
     }
 }
 
-// Iniciar aplicación
+// Inyectar app en el window para acceso global
 window.addEventListener('DOMContentLoaded', () => {
     window.App = new CantoMoscasApp();
 });
